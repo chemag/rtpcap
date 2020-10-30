@@ -678,7 +678,8 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
 
 
 OUTPUT_HEADERS['video-packet'] = (
-    'frame_time_relative', 'frame_time_epoch', 'rtp_timestamp', 'rtp_marker',
+    'frame_time_relative', 'frame_time_epoch',
+    'rtp_seq', 'rtp_timestamp', 'rtp_marker',
     'bytes', 'frame_video_type', 'intra_latency',
 )
 
@@ -724,6 +725,7 @@ def analyze_video_packet(parsed_rtp_list, ip_src, rtp_ssrc):
         intra_latency = pkt['frame_time_epoch'] - first_frame_time_epoch
         out_data.append([pkt['frame_time_relative'],
                          pkt['frame_time_epoch'],
+                         pkt['rtp_seq'],
                          pkt['rtp_timestamp'],
                          pkt['rtp_marker'],
                          pkt['ip_len'],
@@ -737,6 +739,7 @@ def analyze_video_packet(parsed_rtp_list, ip_src, rtp_ssrc):
     intra_latency = pkt['frame_time_epoch'] - first_frame_time_epoch
     out_data.append([pkt['frame_time_relative'],
                      pkt['frame_time_epoch'],
+                     pkt['rtp_seq'],
                      pkt['rtp_timestamp'],
                      pkt['rtp_marker'],
                      pkt['ip_len'],
