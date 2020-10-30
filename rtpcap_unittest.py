@@ -206,9 +206,10 @@ analyzeVideoFrameTestCases = [
         'out_data': [
             # 'frame_time_relative', 'frame_time_epoch', 'rtp_timestamp',
             # 'packets', 'bytes', 'frame_video_type', 'intra_latency',
-            # 'inter_latency', 'rtp_timestamp_latency',
+            # 'inter_latency', 'rtp_timestamp_latency', 'rtp_seq_list'
             [8.258306, 1596055127.588039, 541511905, 5, 4663, 'I',
-             0.03445100784301758, 0.03445100784301758, 0],
+             0.03445100784301758, 0.03445100784301758, 0,
+             '9017:9018:9019:9020:9021'],
         ],
     },
 ]
