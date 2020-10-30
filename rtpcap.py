@@ -581,7 +581,8 @@ def analyze_video_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
 
 OUTPUT_HEADERS['video-frame'] = (
     'frame_time_relative', 'frame_time_epoch', 'rtp_timestamp',
-    'packets', 'bytes', 'frame_video_type', 'intra_latency',
+    'packets', 'ploss', 'porder', 'pdups',
+    'bytes', 'frame_video_type', 'intra_latency',
     'inter_latency', 'rtp_timestamp_latency',
     'rtp_seq_list',
 )
@@ -613,6 +614,7 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
     cum_bytes = 0
     frame_video_type = 'P'
     rtp_seq_list = []
+    rtp_seq_list_last_rtp_seq = None
     for pkt in parsed_rtp_list[ip_src][rtp_ssrc]:
         # first packet
         if rtp_timestamp is None or first_frame_time_epoch is None:
@@ -632,10 +634,16 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
             intra_latency = last_frame_time_epoch - first_frame_time_epoch
             inter_latency = pkt['frame_time_epoch'] - first_frame_time_epoch
             rtp_timestamp_latency = pkt['rtp_timestamp'] - rtp_timestamp
+            ploss, porder, pdups, rtp_seq_list_last_rtp_seq = (
+                get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
+                                                  rtp_seq_list))
             out_data.append([first_frame_time_relative,
                              first_frame_time_epoch,
                              rtp_timestamp,
                              cum_pkts,
+                             ploss,
+                             porder,
+                             pdups,
                              cum_bytes,
                              frame_video_type,
                              intra_latency,
@@ -649,6 +657,7 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
             cum_bytes = 0
             cum_pkts = 0
             frame_video_type = 'P'
+            rtp_seq_list_last_rtp_seq = rtp_seq_list[-1]
             rtp_seq_list = []
         else:
             # check current frame video type may be i-frame
@@ -670,10 +679,16 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
     intra_latency = last_frame_time_epoch - first_frame_time_epoch
     inter_latency = pkt['frame_time_epoch'] - first_frame_time_epoch
     rtp_timestamp_latency = pkt['rtp_timestamp'] - rtp_timestamp
+    ploss, porder, pdups, rtp_seq_list_last_rtp_seq = (
+        get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
+                                          rtp_seq_list))
     out_data.append([first_frame_time_relative,
                      first_frame_time_epoch,
                      rtp_timestamp,
                      cum_pkts,
+                     ploss,
+                     porder,
+                     pdups,
                      cum_bytes,
                      frame_video_type,
                      intra_latency,
