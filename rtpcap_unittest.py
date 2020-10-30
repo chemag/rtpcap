@@ -23,6 +23,15 @@ getPacketLossAndOutOfOrderTestCases = [
         'rtp_seq_max': 4,
     },
     {
+        'name': 'wraparound 65536',
+        'rtp_seq_prev': 65534,
+        'rtp_seq_list': [65535, 0, 1],
+        'ploss': 0,
+        'porder': 0,
+        'pdups': 0,
+        'rtp_seq_max': 1,
+    },
+    {
         'name': 'empty rtp_seq_prev',
         'rtp_seq_prev': None,
         'rtp_seq_list': [2, 3, 4],

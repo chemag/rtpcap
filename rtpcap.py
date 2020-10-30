@@ -421,7 +421,7 @@ def get_packets_loss_and_out_of_order(rtp_seq_prev, rtp_seq_list):
         if delta < 0:
             num_negative_delta += 1
         rtp_seq_prev = rtp_seq
-    ploss = rtp_seq_max - rtp_seq_min - len(set(full_list)) + 1
+    ploss = rtp_ploss_diff(rtp_seq_max, rtp_seq_min) - len(set(full_list)) + 1
     porder = num_negative_delta
     return ploss, porder, pdups, rtp_seq_max
 
