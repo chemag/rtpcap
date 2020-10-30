@@ -734,17 +734,6 @@ def analyze_video_packet(parsed_rtp_list, ip_src, rtp_ssrc):
         # account for current packet
         cum_pkts += 1
         cum_bytes += pkt['ip_len']
-
-    # flush data
-    intra_latency = pkt['frame_time_epoch'] - first_frame_time_epoch
-    out_data.append([pkt['frame_time_relative'],
-                     pkt['frame_time_epoch'],
-                     pkt['rtp_seq'],
-                     pkt['rtp_timestamp'],
-                     pkt['rtp_marker'],
-                     pkt['ip_len'],
-                     frame_video_type,
-                     intra_latency])
     return out_data
 
 
