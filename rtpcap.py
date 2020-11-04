@@ -627,7 +627,20 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
             frame_video_type = 'P'
         # check output
         if pkt['rtp_timestamp'] < rtp_timestamp:
-            # old packet: ignore it
+            # old packet: dump extra line
+            out_data.append([pkt['frame_time_relative'],
+                             pkt['frame_time_epoch'],
+                             pkt['rtp_timestamp'],
+                             1,
+                             -1,
+                             0,
+                             0,
+                             pkt['ip_len'],
+                             '?',
+                             0,
+                             0,
+                             0,
+                             pkt['rtp_seq']])
             continue
         elif pkt['rtp_timestamp'] > rtp_timestamp:
             # new frame: process data from old frame
