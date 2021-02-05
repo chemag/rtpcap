@@ -109,7 +109,7 @@ def analyze_udp_connections(infile, options):
     returncode, out, err = run(command, options)
     tshark_error_check(returncode, out, err, command)
     # parse the output
-    return parse_udp_connections(out, options)
+    return parse_udp_connections(out)
 
 
 def get_addr_proto(addr):
@@ -120,7 +120,7 @@ def get_addr_proto(addr):
     return None
 
 
-def parse_udp_connections(out, options):
+def parse_udp_connections(out):
     udp_connections = []
     # example: '1.1.1.1:1111 <-> 2.2.2.2:2222 0 0 8 4276 8 4276 0.56065 7.6643'
     conn_pattern = (
@@ -128,11 +128,11 @@ def parse_udp_connections(out, options):
         r' <-> '
         r'(?P<raddr>' + IP_PATTERN + r'):(?P<rport>\d*) *'
         r'(?P<rpkts>\d*) *'
-        r'(?P<rbytes>\d*) *'
+        r'(?P<rbytes>[^ ]*) *'
         r'(?P<lpkts>\d*) *'
-        r'(?P<lbytes>\d*) *'
+        r'(?P<lbytes>[^ ]*) *'
         r'(?P<tpkts>\d*) *'
-        r'(?P<tbytes>\d*) *'
+        r'(?P<tbytes>[^ ]*) *'
         r'(?P<start>[\d\.]*) *'
         r'(?P<duration>[\d\.]*)$'
     )
