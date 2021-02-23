@@ -213,12 +213,15 @@ analyzeVideoFrameTestCases = [
             },
         ],
         'out_data': [
-            # 'frame_time_relative', 'frame_time_epoch', 'rtp_timestamp',
+            # 'frame_time_relative', 'frame_time_epoch',
+            # 'frame_time_intra_latency', 'frame_time_inter_latency',
+            # 'rtp_timestamp', 'rtp_timestamp_inter_latency',
             # 'packets', 'ploss', 'porder', 'pdups', 'bytes',
-            # 'frame_video_type', 'intra_latency',
-            # 'inter_latency', 'rtp_timestamp_latency', 'rtp_seq_list'
-            [8.258306, 1596055127.588039, 541511905, 5, 0, 0, 0, 4663, 'I',
-             0.03445100784301758, 0.03445100784301758, 0,
+            # 'frame_video_type', 'rtp_seq_list'
+            [8.258306, 1596055127.588039,
+             0.03445100784301758, 0.03445100784301758,
+             541511905, 0,
+             5, 0, 0, 0, 4663, 'I',
              '9017:9018:9019:9020:9021'],
         ],
     },
