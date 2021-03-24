@@ -24,7 +24,7 @@ default_values = {
     'infile': None,
 }
 
-
+SEP = ' '
 IPV4_PATTERN = r'\d+\.\d+\.\d+\.\d+'
 IPV6_PATTERN = r'[a-fA-F\d:]+'
 IP_PATTERN = r'[a-fA-F\d:\.]+'
@@ -190,7 +190,7 @@ def get_connection_information(parsed_rtp_list):
             out_data.append([i,
                              ip_src,
                              rtp_ssrc,
-                             ':'.join([str(i) for i in rtp_p_type_list]),
+                             SEP.join([str(i) for i in rtp_p_type_list]),
                              ip_len,
                              pkts,
                              duration,
@@ -470,10 +470,10 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              cum_bytes,
                              int(cum_bytes * 8 / period_sec),
                              frame_time_relative_stdev,
-                             ':'.join([str(i) for i in
+                             SEP.join([str(i) for i in
                                        frame_time_relative_list]),
-                             ':'.join([str(i) for i in rtp_seq_list]),
-                             ':'.join([str(i) for i in rtp_timestamp_list])])
+                             SEP.join([str(i) for i in rtp_seq_list]),
+                             SEP.join([str(i) for i in rtp_timestamp_list])])
             cum_pkts = 0
             cum_bytes = 0
             frame_time_relative_list = []
@@ -527,9 +527,9 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                      cum_bytes,
                      int(cum_bytes * 8 / period_sec),
                      frame_time_relative_stdev,
-                     ':'.join([str(i) for i in frame_time_relative_list]),
-                     ':'.join([str(i) for i in rtp_seq_list]),
-                     ':'.join([str(i) for i in rtp_timestamp_list])])
+                     SEP.join([str(i) for i in frame_time_relative_list]),
+                     SEP.join([str(i) for i in rtp_seq_list]),
+                     SEP.join([str(i) for i in rtp_timestamp_list])])
     return out_data
 
 
@@ -688,7 +688,7 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
                              pdups,
                              cum_bytes,
                              frame_video_type,
-                             ':'.join([str(i) for i in rtp_seq_list])])
+                             SEP.join([str(i) for i in rtp_seq_list])])
             rtp_timestamp = pkt['rtp_timestamp']
             first_frame_time_epoch = pkt['frame_time_epoch']
             first_frame_time_relative = pkt['frame_time_relative']
@@ -733,7 +733,7 @@ def analyze_video_frame(parsed_rtp_list, ip_src, rtp_ssrc):
                      pdups,
                      cum_bytes,
                      frame_video_type,
-                     ':'.join([str(i) for i in rtp_seq_list])])
+                     SEP.join([str(i) for i in rtp_seq_list])])
     return out_data
 
 
@@ -900,7 +900,7 @@ def analyze_video_stream(rtp_pkt_list, video_rtp_p_type, options):
             statistics.append([frame_time_epoch, sec_pkts, sec_bytes * 8,
                                sec_frames, sec_max_frame_pkts,
                                sec_max_frame_bytes * 8, sec_rtp_seq_issues,
-                               ':'.join([str(i) for i in sec_frame_pkts])])
+                               SEP.join([str(i) for i in sec_frame_pkts])])
             sec_frame_time_epoch = frame_time_epoch
             sec_bytes = 0
             sec_pkts = 0
