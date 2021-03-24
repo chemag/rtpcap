@@ -35,12 +35,12 @@ IP_PATTERN = r'[a-fA-F\d:\.]+'
 # (video only)
 # 3. per-time: one entry for all RTP packets in the same period (`period_sec`)
 ANALYSIS_TYPES = {
-    'network-time',
-    'audio-packet',
-    'video-time',
-    'video-frame',
-    'video-packet',
-    'all',
+    'network-time': 'generic network analysis, time unit-based',
+    'audio-packet': 'audio analysis, packet-based',
+    'video-time': 'video analysis, time unit-based',
+    'video-frame': 'video analysis, frame-based',
+    'video-packet': 'video analysis, packet-based',
+    'all': 'run them all',
 }
 
 OUTPUT_HEADERS = {}
@@ -1033,12 +1033,12 @@ def get_options(argv):
     parser.add_argument('-a', '--analysis', action='store', type=str,
                         dest='analysis_type',
                         default=default_values['analysis_type'],
-                        choices=ANALYSIS_TYPES,
+                        choices=ANALYSIS_TYPES.keys(),
                         metavar='ANALYSIS_TYPE',
                         help='analysis type %r' % ANALYSIS_TYPES,)
     for analysis in ANALYSIS_TYPES:
-        analysis_help = 'analysis type: %s (%r)' % (
-            analysis,
+        analysis_help = '%s. values: %r' % (
+            ANALYSIS_TYPES[analysis],
             OUTPUT_HEADERS[analysis] if analysis != 'all' else '')
         parser.add_argument('--%s' % analysis, action='store_const',
                             dest='analysis_type', const=analysis,
