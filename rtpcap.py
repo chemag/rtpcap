@@ -431,9 +431,30 @@ OUTPUT_HEADERS['network-time'] = (
     'frame_time_relative', 'frame_time_epoch', 'pkts', 'ploss', 'porder',
     'pdups', 'bytes_last_interval', 'bitrate_last_interval',
     'frame_time_relative_mean', 'frame_time_relative_stdev',
-    'frame_time_relative_list',
+    'clock_mean', 'frame_time_relative_list',
     'rtp_seq_list', 'rtp_timestamp_list',
 )
+
+
+def get_clock_list(rtp_timestamp_list, frame_time_relative_list):
+    prev_rtp_timestamp = None
+    prev_frame_time_relative = None
+    clock_list = []
+    # ignore duplicate rtp timestamps (for video)
+    for rtp_timestamp, frame_time_relative in zip(rtp_timestamp_list,
+                                                  frame_time_relative_list):
+        if prev_rtp_timestamp is None or prev_frame_time_relative is None:
+            prev_rtp_timestamp = rtp_timestamp
+            prev_frame_time_relative = frame_time_relative
+            continue
+        if prev_rtp_timestamp == rtp_timestamp:
+            # packet from same video frame: ignore
+            continue
+        # packet from different video frame/audio packet: add it
+        clock_element = ((rtp_timestamp - prev_rtp_timestamp) /
+                         (frame_time_relative - prev_frame_time_relative))
+        clock_list.append(clock_element)
+    return clock_list
 
 
 def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
@@ -457,15 +478,21 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                 get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                                   rtp_seq_list))
             try:
+                frame_time_relative_diff = [i - j for i, j in
+                                            zip(frame_time_relative_list[1:],
+                                                frame_time_relative_list[:-1])]
                 frame_time_relative_mean = statistics.mean(
-                      [i - j for i, j in zip(frame_time_relative_list[1:],
-                                             frame_time_relative_list[:-1])])
+                    frame_time_relative_diff)
                 frame_time_relative_stdev = statistics.stdev(
-                      [i - j for i, j in zip(frame_time_relative_list[1:],
-                                             frame_time_relative_list[:-1])])
+                    frame_time_relative_diff)
+                clock_list = get_clock_list(rtp_timestamp_list,
+                                            frame_time_relative_list)
+                clock_mean = statistics.mean(clock_list)
             except statistics.StatisticsError:
                 frame_time_relative_mean = None
                 frame_time_relative_stdev = None
+                clock_mean = None
+
             out_data.append([last_frame_time_relative,
                              last_frame_time_epoch,
                              cum_pkts,
@@ -476,6 +503,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              int(cum_bytes * 8 / period_sec),
                              frame_time_relative_mean,
                              frame_time_relative_stdev,
+                             clock_mean,
                              SEP.join([str(i) for i in
                                        frame_time_relative_list]),
                              SEP.join([str(i) for i in rtp_seq_list]),
@@ -502,6 +530,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                                  0,
                                  None,
                                  None,
+                                 None,
                                  '',
                                  '',
                                  ''])
@@ -520,15 +549,18 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
         get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                           rtp_seq_list))
     try:
-        frame_time_relative_mean = statistics.mean(
-              [i - j for i, j in zip(frame_time_relative_list[1:],
-                                     frame_time_relative_list[:-1])])
-        frame_time_relative_stdev = statistics.stdev(
-              [i - j for i, j in zip(frame_time_relative_list[1:],
-                                     frame_time_relative_list[:-1])])
+        frame_time_relative_diff = [i - j for i, j in
+                                    zip(frame_time_relative_list[1:],
+                                        frame_time_relative_list[:-1])]
+        frame_time_relative_mean = statistics.mean(frame_time_relative_diff)
+        frame_time_relative_stdev = statistics.stdev(frame_time_relative_diff)
+        clock_list = get_clock_list(rtp_timestamp_list,
+                                    frame_time_relative_list)
+        clock_mean = statistics.mean(clock_list)
     except statistics.StatisticsError:
         frame_time_relative_mean = None
         frame_time_relative_stdev = None
+        clock_mean = None
     out_data.append([last_frame_time_relative,
                      last_frame_time_epoch,
                      cum_pkts,
@@ -539,6 +571,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                      int(cum_bytes * 8 / period_sec),
                      frame_time_relative_mean,
                      frame_time_relative_stdev,
+                     clock_mean,
                      SEP.join([str(i) for i in frame_time_relative_list]),
                      SEP.join([str(i) for i in rtp_seq_list]),
                      SEP.join([str(i) for i in rtp_timestamp_list])])
@@ -635,7 +668,7 @@ OUTPUT_HEADERS['video-frame'] = (
 # from B. For example, if `A1 < A2 < ... < Aj < Bk < Aj+1 < Am`, then
 # video-frame measures `Aj - A1`. This slightly-modified definition
 # makes the implementation much easier, and should not make much of
-# a difference, as packets are always sent in order (i.e.  `An < B1`
+# a difference, as packets are always sent in order (i.e. `An < B1`
 # at the sender).
 # (2) inter-frame latency, measured as the time between the first packets
 # of 2 consecutive frames.
