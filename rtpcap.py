@@ -160,8 +160,8 @@ def get_rtp_p_type_list(parsed_rtp_list):
 
 
 OUTPUT_HEADERS['conn-info'] = (
-    'id', 'ip_src', 'rtp_ssrc', 'rtp_p_type_list', 'ip_len', 'pkts',
-    'duration', 'clock_estimation', 'filename',
+    'id', 'ip_src', 'rtp_ssrc', 'rtp_p_type_list', 'clock_estimation',
+    'ip_len', 'pkts', 'duration', 'filename',
 )
 
 
@@ -184,8 +184,10 @@ def get_connection_information(parsed_rtp_list):
             rtp_timestampN = pktN['rtp_timestamp']
             frame_time_relative0 = pkt0['frame_time_relative']
             frame_time_relativeN = pktN['frame_time_relative']
-            clock_estimation = ((rtp_timestampN - rtp_timestamp0) /
-                                (frame_time_relativeN - frame_time_relative0))
+            clock_estimation = get_clock_estimation(rtp_timestampN,
+                                                    rtp_timestamp0,
+                                                    frame_time_relativeN,
+                                                    frame_time_relative0)
             ip_len = sum(d['ip_len'] for d in
                          parsed_rtp_list[ip_src][rtp_ssrc])
             duration = (parsed_rtp_list[ip_src][rtp_ssrc][-1]
@@ -199,10 +201,10 @@ def get_connection_information(parsed_rtp_list):
                              ip_src,
                              rtp_ssrc,
                              SEP.join([str(i) for i in rtp_p_type_list]),
+                             int(round(clock_estimation)),
                              ip_len,
                              pkts,
                              duration,
-                             int(round(clock_estimation)),
                              ])
             i += 1
     return out_data
@@ -445,6 +447,16 @@ OUTPUT_HEADERS['network-time'] = (
 )
 
 
+def get_clock_estimation(rtp_timestampN, rtp_timestamp0, frame_time_relativeN,
+                         frame_time_relative0):
+    # add support for rtp timestamp wraparounds
+    if rtp_timestampN < rtp_timestamp0:
+        rtp_timestampN += 2**32
+    clock_estimation = ((rtp_timestampN - rtp_timestamp0) /
+                        (frame_time_relativeN - frame_time_relative0))
+    return clock_estimation
+
+
 def get_clock_list(rtp_timestamp_list, frame_time_relative_list):
     prev_rtp_timestamp = None
     prev_frame_time_relative = None
@@ -460,8 +472,10 @@ def get_clock_list(rtp_timestamp_list, frame_time_relative_list):
             # packet from same video frame: ignore
             continue
         # packet from different video frame/audio packet: add it
-        clock_element = ((rtp_timestamp - prev_rtp_timestamp) /
-                         (frame_time_relative - prev_frame_time_relative))
+        clock_element = get_clock_estimation(rtp_timestamp,
+                                             prev_rtp_timestamp,
+                                             frame_time_relative,
+                                             prev_frame_time_relative)
         clock_list.append(clock_element)
     return clock_list
 
