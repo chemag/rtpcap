@@ -430,7 +430,8 @@ def get_packets_loss_and_out_of_order(rtp_seq_prev, rtp_seq_list):
 OUTPUT_HEADERS['network-time'] = (
     'frame_time_relative', 'frame_time_epoch', 'pkts', 'ploss', 'porder',
     'pdups', 'bytes_last_interval', 'bitrate_last_interval',
-    'frame_time_relative_stdev', 'frame_time_relative_list',
+    'frame_time_relative_mean', 'frame_time_relative_stdev',
+    'frame_time_relative_list',
     'rtp_seq_list', 'rtp_timestamp_list',
 )
 
@@ -456,10 +457,14 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                 get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                                   rtp_seq_list))
             try:
+                frame_time_relative_mean = statistics.mean(
+                      [i - j for i, j in zip(frame_time_relative_list[1:],
+                                             frame_time_relative_list[:-1])])
                 frame_time_relative_stdev = statistics.stdev(
                       [i - j for i, j in zip(frame_time_relative_list[1:],
                                              frame_time_relative_list[:-1])])
             except statistics.StatisticsError:
+                frame_time_relative_mean = None
                 frame_time_relative_stdev = None
             out_data.append([last_frame_time_relative,
                              last_frame_time_epoch,
@@ -469,6 +474,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              pdups,
                              cum_bytes,
                              int(cum_bytes * 8 / period_sec),
+                             frame_time_relative_mean,
                              frame_time_relative_stdev,
                              SEP.join([str(i) for i in
                                        frame_time_relative_list]),
@@ -495,6 +501,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                                  0,
                                  0,
                                  None,
+                                 None,
                                  '',
                                  '',
                                  ''])
@@ -513,10 +520,14 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
         get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                           rtp_seq_list))
     try:
+        frame_time_relative_mean = statistics.mean(
+              [i - j for i, j in zip(frame_time_relative_list[1:],
+                                     frame_time_relative_list[:-1])])
         frame_time_relative_stdev = statistics.stdev(
               [i - j for i, j in zip(frame_time_relative_list[1:],
                                      frame_time_relative_list[:-1])])
     except statistics.StatisticsError:
+        frame_time_relative_mean = None
         frame_time_relative_stdev = None
     out_data.append([last_frame_time_relative,
                      last_frame_time_epoch,
@@ -526,6 +537,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                      pdups,
                      cum_bytes,
                      int(cum_bytes * 8 / period_sec),
+                     frame_time_relative_mean,
                      frame_time_relative_stdev,
                      SEP.join([str(i) for i in frame_time_relative_list]),
                      SEP.join([str(i) for i in rtp_seq_list]),
