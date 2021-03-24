@@ -161,7 +161,7 @@ def get_rtp_p_type_list(parsed_rtp_list):
 
 OUTPUT_HEADERS['conn-info'] = (
     'id', 'ip_src', 'rtp_ssrc', 'rtp_p_type_list', 'ip_len', 'pkts',
-    'duration', 'filename',
+    'duration', 'clock_estimation', 'filename',
 )
 
 
@@ -178,6 +178,14 @@ def get_connection_information(parsed_rtp_list):
             key=lambda rtp_ssrc: get_rtp_p_type_list(
                 parsed_rtp_list[ip_src][rtp_ssrc])[0])
         for rtp_ssrc in rtp_ssrc_list:
+            pkt0 = parsed_rtp_list[ip_src][rtp_ssrc][0]
+            pktN = parsed_rtp_list[ip_src][rtp_ssrc][-1]
+            rtp_timestamp0 = pkt0['rtp_timestamp']
+            rtp_timestampN = pktN['rtp_timestamp']
+            frame_time_relative0 = pkt0['frame_time_relative']
+            frame_time_relativeN = pktN['frame_time_relative']
+            clock_estimation = ((rtp_timestampN - rtp_timestamp0) /
+                                (frame_time_relativeN - frame_time_relative0))
             ip_len = sum(d['ip_len'] for d in
                          parsed_rtp_list[ip_src][rtp_ssrc])
             duration = (parsed_rtp_list[ip_src][rtp_ssrc][-1]
@@ -194,6 +202,7 @@ def get_connection_information(parsed_rtp_list):
                              ip_len,
                              pkts,
                              duration,
+                             int(round(clock_estimation)),
                              ])
             i += 1
     return out_data
