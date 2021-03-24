@@ -494,7 +494,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                                  0,
                                  0,
                                  0,
-                                 0,
+                                 None,
                                  '',
                                  '',
                                  ''])
