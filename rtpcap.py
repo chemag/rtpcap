@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import re
 import os.path
+import statistics
 import subprocess
 import sys
 
@@ -429,6 +430,7 @@ def get_packets_loss_and_out_of_order(rtp_seq_prev, rtp_seq_list):
 OUTPUT_HEADERS['network-time'] = (
     'frame_time_relative', 'frame_time_epoch', 'pkts', 'ploss', 'porder',
     'pdups', 'bytes_last_interval', 'bitrate_last_interval',
+    'frame_time_relative_stdev', 'frame_time_relative_list',
     'rtp_seq_list', 'rtp_timestamp_list',
 )
 
@@ -440,6 +442,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
     last_frame_time_epoch = None
     cum_pkts = 0
     cum_bytes = 0
+    frame_time_relative_list = []
     rtp_seq_list = []
     rtp_seq_list_last_rtp_seq = None
     rtp_timestamp_list = []
@@ -452,6 +455,12 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
             ploss, porder, pdups, rtp_seq_list_last_rtp_seq = (
                 get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                                   rtp_seq_list))
+            try:
+                frame_time_relative_stdev = statistics.stdev(
+                      [i - j for i, j in zip(frame_time_relative_list[1:],
+                                             frame_time_relative_list[:-1])])
+            except statistics.StatisticsError:
+                frame_time_relative_stdev = None
             out_data.append([last_frame_time_relative,
                              last_frame_time_epoch,
                              cum_pkts,
@@ -460,10 +469,14 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              pdups,
                              cum_bytes,
                              int(cum_bytes * 8 / period_sec),
+                             frame_time_relative_stdev,
+                             ':'.join([str(i) for i in
+                                       frame_time_relative_list]),
                              ':'.join([str(i) for i in rtp_seq_list]),
                              ':'.join([str(i) for i in rtp_timestamp_list])])
             cum_pkts = 0
             cum_bytes = 0
+            frame_time_relative_list = []
             rtp_seq_list_last_rtp_seq = rtp_seq_list[-1]
             rtp_seq_list = []
             rtp_timestamp_list = []
@@ -481,6 +494,8 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                                  0,
                                  0,
                                  0,
+                                 0,
+                                 '',
                                  '',
                                  ''])
 
@@ -489,6 +504,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
         # account for current packet
         cum_pkts += 1
         cum_bytes += pkt['ip_len']
+        frame_time_relative_list.append(pkt['frame_time_relative'])
         rtp_seq_list.append(pkt['rtp_seq'])
         rtp_timestamp_list.append(pkt['rtp_timestamp'])
 
@@ -496,6 +512,12 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
     ploss, porder, pdups, rtp_seq_list_last_rtp_seq = (
         get_packets_loss_and_out_of_order(rtp_seq_list_last_rtp_seq,
                                           rtp_seq_list))
+    try:
+        frame_time_relative_stdev = statistics.stdev(
+              [i - j for i, j in zip(frame_time_relative_list[1:],
+                                     frame_time_relative_list[:-1])])
+    except statistics.StatisticsError:
+        frame_time_relative_stdev = None
     out_data.append([last_frame_time_relative,
                      last_frame_time_epoch,
                      cum_pkts,
@@ -504,6 +526,8 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                      pdups,
                      cum_bytes,
                      int(cum_bytes * 8 / period_sec),
+                     frame_time_relative_stdev,
+                     ':'.join([str(i) for i in frame_time_relative_list]),
                      ':'.join([str(i) for i in rtp_seq_list]),
                      ':'.join([str(i) for i in rtp_timestamp_list])])
     return out_data
