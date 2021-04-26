@@ -441,6 +441,7 @@ def get_packets_loss_and_out_of_order(rtp_seq_prev, rtp_seq_list):
 OUTPUT_HEADERS['network-time'] = (
     'frame_time_relative', 'frame_time_epoch', 'pkts', 'ploss', 'porder',
     'pdups', 'bytes_last_interval', 'bitrate_last_interval',
+    'pkts_padding',
     'frame_time_relative_mean', 'frame_time_relative_stdev',
     'clock_mean', 'frame_time_relative_list',
     'rtp_seq_list', 'rtp_timestamp_list',
@@ -487,6 +488,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
     last_frame_time_epoch = None
     cum_pkts = 0
     cum_bytes = 0
+    cum_pkts_padding = 0
     frame_time_relative_list = []
     rtp_seq_list = []
     rtp_seq_list_last_rtp_seq = None
@@ -524,6 +526,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              pdups,
                              cum_bytes,
                              int(cum_bytes * 8 / period_sec),
+                             cum_pkts_padding,
                              frame_time_relative_mean,
                              frame_time_relative_stdev,
                              clock_mean,
@@ -533,6 +536,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                              SEP.join([str(i) for i in rtp_timestamp_list])])
             cum_pkts = 0
             cum_bytes = 0
+            cum_pkts_padding = 0
             frame_time_relative_list = []
             rtp_seq_list_last_rtp_seq = rtp_seq_list[-1]
             rtp_seq_list = []
@@ -563,6 +567,8 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
         # account for current packet
         cum_pkts += 1
         cum_bytes += pkt['ip_len']
+        if pkt['rtp_padding'] == 1:
+            cum_pkts_padding += 1
         frame_time_relative_list.append(pkt['frame_time_relative'])
         rtp_seq_list.append(pkt['rtp_seq'])
         rtp_timestamp_list.append(pkt['rtp_timestamp'])
@@ -592,6 +598,7 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                      pdups,
                      cum_bytes,
                      int(cum_bytes * 8 / period_sec),
+                     cum_pkts_padding,
                      frame_time_relative_mean,
                      frame_time_relative_stdev,
                      clock_mean,
@@ -896,6 +903,7 @@ def analyze_rtp_data(infile, conn_filter, sport, proto, options):
                '-e rtp.seq '
                '-e rtp.timestamp '
                '-e rtp.marker '
+               '-e rtp.padding '
                '-e rtp.ext.rfc5285.data' % (
                    infile, sport, conn_filter, ip_src_field, ip_len_field))
     returncode, out, err = run(command, options)
@@ -1040,6 +1048,7 @@ def parse_rtp_data(out, options):
         r'(?P<rtp_seq>\d*)\t*'  # optional
         r'(?P<rtp_timestamp>\d*)\t*'  # optional
         r'(?P<rtp_marker>\d*)\t*'  # optional
+        r'(?P<rtp_padding>\d*)\t*'  # optional
         r'(?P<rtp_ext_rfc5285_data>[\da-fA-F]*)'  # optional
     )
     for line in out.splitlines():
@@ -1068,6 +1077,7 @@ def parse_rtp_data(out, options):
             entry['rtp_seq'] = int(entry['rtp_seq'])
             entry['rtp_timestamp'] = int(entry['rtp_timestamp'])
             entry['rtp_marker'] = int(entry['rtp_marker'])
+            entry['rtp_padding'] = int(entry['rtp_padding'])
             if entry['rtp_ext_rfc5285_data']:
                 entry['rtp_ext_rfc5285_data'] = int(
                     entry['rtp_ext_rfc5285_data'], 16)
@@ -1083,6 +1093,7 @@ def parse_rtp_data(out, options):
             del entry['rtp_seq']
             del entry['rtp_timestamp']
             del entry['rtp_marker']
+            del entry['rtp_padding']
             del entry['rtp_ext_rfc5285_data']
             if ip_src not in parsed_rtcp_list:
                 parsed_rtcp_list[ip_src] = []
