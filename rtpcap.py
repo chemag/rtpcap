@@ -549,18 +549,19 @@ def analyze_network_time(parsed_rtp_list, ip_src, rtp_ssrc, period_sec):
                 last_frame_time_epoch += period_sec
                 out_data.append([last_frame_time_relative,
                                  last_frame_time_epoch,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 None,
-                                 None,
-                                 None,
-                                 '',
-                                 '',
-                                 ''])
+                                 0,  # cum_pkts
+                                 0,  # ploss
+                                 0,  # porder
+                                 0,  # pdups
+                                 0,  # cum_bytes
+                                 0,  # last_bitrate
+                                 0,  # cum_pkts_padding
+                                 None,  # frame_time_relative_mean
+                                 None,  # frame_time_relative_stdev
+                                 None,  # clock_mean
+                                 '',  # frame_time_relative_list
+                                 '',  # rtp_seq_list
+                                 ''])  # rtp_timestamp_list
 
             last_frame_time_relative += period_sec
             last_frame_time_epoch += period_sec
